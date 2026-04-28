@@ -2,7 +2,10 @@ package main
 
 import (
 	"MusicStreamingHistoryService/internal/config"
+	"MusicStreamingHistoryService/internal/grpc"
 	cassandradb "MusicStreamingHistoryService/internal/repository/cassandra"
+	"MusicStreamingHistoryService/internal/service"
+	"fmt"
 
 	"go.uber.org/zap"
 )
@@ -35,4 +38,18 @@ func main() {
 	defer session.Close()
 
 	logger.Info("connected to Cassandra")
+
+	listeningHistoryRepo := cassandradb.NewListeningHistoryRepository(session)
+	listeningHistoryService := service.NewListeningHistoryService(listeningHistoryRepo, logger)
+	listeningHistoryHandler := grpc.NewListeningHistoryHandler(listeningHistoryService)
+
+	grpcServer := grpc.NewServer(cfg.GRPC.Port, logger, listeningHistoryHandler)
+
+	logger.Info("application initialized",
+		zap.String("service_type", fmt.Sprintf("%T", listeningHistoryService)),
+	)
+
+	if err := grpcServer.Run(); err != nil {
+		logger.Fatal("failed to start grpc server", zap.Error(err))
+	}
 }
