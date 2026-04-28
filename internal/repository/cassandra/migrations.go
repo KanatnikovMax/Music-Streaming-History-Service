@@ -3,7 +3,6 @@ package cassandra
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/cassandra"
@@ -16,9 +15,7 @@ func RunMigrations(hosts []string, keyspace string) error {
 		hosts[0],
 		keyspace,
 	)
-	fmt.Println(connectionUrl)
-	wd, _ := os.Getwd()
-	fmt.Println("Working dir:", wd)
+
 	m, err := migrate.New("file://migrations", connectionUrl)
 	if err != nil {
 		return fmt.Errorf("failed to init migrator: %w", err)
