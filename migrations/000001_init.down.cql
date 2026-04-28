@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS music_streaming.listening_history;

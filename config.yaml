@@ -1,0 +1,15 @@
+cassandra:
+  hosts:
+    - "localhost"
+  keyspace: "music_streaming"
+  username: ""
+  password: ""
+
+kafka:
+  brokers:
+    - "localhost:29092"
+  topic: "listening-history"
+  group_id: "listening-history-service"
+
+grpc:
+  port: 50051
