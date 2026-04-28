@@ -1,0 +1,25 @@
+services:
+  cassandra_db:
+    container_name: cassandra-history
+    image: cassandra:latest
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=music-streaming-cluster
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES'"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+    networks:
+      - app-network
+
+volumes:
+  cassandra-data:
+
+networks:
+  app-network:
+    driver: bridge
