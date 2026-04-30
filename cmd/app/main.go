@@ -2,10 +2,15 @@ package main
 
 import (
 	"MusicStreamingHistoryService/internal/config"
+	"MusicStreamingHistoryService/internal/consumer"
 	"MusicStreamingHistoryService/internal/grpc"
 	cassandradb "MusicStreamingHistoryService/internal/repository/cassandra"
 	"MusicStreamingHistoryService/internal/service"
+	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"go.uber.org/zap"
 )
@@ -42,6 +47,7 @@ func main() {
 	listeningHistoryRepo := cassandradb.NewListeningHistoryRepository(session)
 	listeningHistoryService := service.NewListeningHistoryService(listeningHistoryRepo, logger)
 	listeningHistoryHandler := grpc.NewListeningHistoryHandler(listeningHistoryService)
+	kafkaConsumer := consumer.NewKafkaConsumer(cfg.Kafka, listeningHistoryService, logger)
 
 	grpcServer := grpc.NewServer(cfg.GRPC.Port, logger, listeningHistoryHandler)
 
@@ -49,7 +55,29 @@ func main() {
 		zap.String("service_type", fmt.Sprintf("%T", listeningHistoryService)),
 	)
 
-	if err := grpcServer.Run(); err != nil {
-		logger.Fatal("failed to start grpc server", zap.Error(err))
-	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		if err := kafkaConsumer.Run(ctx); err != nil {
+			logger.Fatal("failed to run kafka consumer", zap.Error(err))
+		}
+	}()
+
+	go func() {
+		if err := grpcServer.Run(); err != nil {
+			logger.Fatal("failed to start grpc server", zap.Error(err))
+		}
+	}()
+
+	logger.Info("application started")
+
+	<-ctx.Done()
+
+	logger.Info("stopping service")
+
+	kafkaConsumer.Close()
+	grpcServer.GracefulStop()
+
+	logger.Info("service stopped")
 }
