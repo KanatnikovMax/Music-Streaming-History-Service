@@ -13,3 +13,6 @@ kafka:
 
 grpc:
   port: 50051
+
+logger:
+  env: "development"

@@ -4,6 +4,7 @@ import (
 	"MusicStreamingHistoryService/internal/config"
 	"MusicStreamingHistoryService/internal/consumer"
 	"MusicStreamingHistoryService/internal/grpc"
+	log "MusicStreamingHistoryService/internal/logger"
 	cassandradb "MusicStreamingHistoryService/internal/repository/cassandra"
 	"MusicStreamingHistoryService/internal/service"
 	"context"
@@ -18,13 +19,10 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
+	logger := log.MustBuild(cfg.Logger)
 	defer logger.Sync()
 
-	logger.Info("starting service")
+	logger.Info("starting service", zap.String("env", cfg.Logger.Env))
 
 	if err := cassandradb.EnsureKeyspaceIsCreated(cfg.Cassandra); err != nil {
 		logger.Fatal("failed to create keyspace", zap.Error(err))
@@ -58,23 +56,33 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	errCh := make(chan error, 2)
+
 	go func() {
 		if err := kafkaConsumer.Run(ctx); err != nil {
-			logger.Fatal("failed to run kafka consumer", zap.Error(err))
+			errCh <- err
 		}
 	}()
 
 	go func() {
 		if err := grpcServer.Run(); err != nil {
-			logger.Fatal("failed to start grpc server", zap.Error(err))
+			errCh <- err
 		}
 	}()
 
-	logger.Info("application started")
+	logger.Info("application started",
+		zap.Int("grpc_port", cfg.GRPC.Port),
+		zap.Strings("kafka_brokers", cfg.Kafka.Brokers),
+		zap.String("kafka_topic", cfg.Kafka.Topic),
+	)
 
-	<-ctx.Done()
-
-	logger.Info("stopping service")
+	select {
+	case <-ctx.Done():
+		logger.Info("gracefully shutting down")
+	case err := <-errCh:
+		logger.Error("critical error, shutting down", zap.Error(err))
+		stop()
+	}
 
 	kafkaConsumer.Close()
 	grpcServer.GracefulStop()
