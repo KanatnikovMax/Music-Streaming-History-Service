@@ -10,6 +10,7 @@ type Config struct {
 	Cassandra CassandraConfig `yaml:"cassandra"`
 	Kafka     KafkaConfig     `yaml:"kafka"`
 	GRPC      GRPCConfig      `yaml:"grpc"`
+	Logger    LoggerConfig    `yaml:"logger"`
 }
 
 type CassandraConfig struct {
@@ -27,6 +28,10 @@ type KafkaConfig struct {
 
 type GRPCConfig struct {
 	Port int `yaml:"port" env:"GRPC_PORT" env-default:"50051"`
+}
+
+type LoggerConfig struct {
+	Env string `yaml:"env" env:"LOGGER_ENV" env-default:"development"`
 }
 
 func MustLoad() *Config {
