@@ -18,6 +18,14 @@ func NewListeningHistoryRepository(session *gocql.Session) repository.ListeningH
 	return &listeningHistoryRepository{session: session}
 }
 
+func toGoCqlUUID(id uuid.UUID) gocql.UUID {
+	return gocql.UUID(id)
+}
+
+func toGoogleUUID(id gocql.UUID) uuid.UUID {
+	return uuid.UUID(id)
+}
+
 func (r *listeningHistoryRepository) Save(
 	ctx context.Context,
 	item domain.ListenHistoryItem,
@@ -27,7 +35,13 @@ func (r *listeningHistoryRepository) Save(
 		VALUES (?, ?, ?, ?)`
 
 	err := r.session.
-		Query(query, item.UserID, item.ListenedAtUtc, item.EventID, item.SongID).
+		Query(
+			query,
+			toGoCqlUUID(item.UserID),
+			item.ListenedAtUtc,
+			toGoCqlUUID(item.EventID),
+			toGoCqlUUID(item.SongID),
+		).
 		WithContext(ctx).
 		Exec()
 
@@ -50,13 +64,17 @@ func (r *listeningHistoryRepository) GetLastByUser(
 		LIMIT ?`
 
 	iter := r.session.
-		Query(query, userID, limit).
+		Query(query, toGoCqlUUID(userID), limit).
 		WithContext(ctx).
 		Iter()
 
 	var items []domain.ListenHistoryItem
 	var item domain.ListenHistoryItem
-	for iter.Scan(&item.EventID, &item.UserID, &item.SongID, &item.ListenedAtUtc) {
+	var eventID, rowUserID, songID gocql.UUID
+	for iter.Scan(&eventID, &rowUserID, &songID, &item.ListenedAtUtc) {
+		item.EventID = toGoogleUUID(eventID)
+		item.UserID = toGoogleUUID(rowUserID)
+		item.SongID = toGoogleUUID(songID)
 		items = append(items, item)
 	}
 
