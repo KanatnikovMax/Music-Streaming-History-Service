@@ -26,6 +26,8 @@ services:
       - "2181:2181"
     volumes:
       - zookeeper_data:/var/lib/zookeeper
+    networks:
+      app-network:
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -50,15 +52,18 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka
     healthcheck:
-      test: [ "CMD", "bash", "-c", "nc -z localhost 9092" ]
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      app-network:
 
   kafka-init:
     image: confluentinc/cp-kafka:latest
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     entrypoint: [ "/bin/sh", "-c" ]
     command: >
       "
@@ -70,6 +75,8 @@ services:
         --partitions 3
         --replication-factor 1
       "
+    networks:
+      app-network:
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -79,9 +86,33 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     networks:
       - app-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: listening-history-service
+    depends_on:
+      cassandra_db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+    environment:
+      CASSANDRA_HOSTS: cassandra-history
+      CASSANDRA_KEYSPACE: music_streaming
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_TOPIC: listening-history
+      KAFKA_GROUP_ID: listening-history-service
+      GRPC_PORT: 50051
+      LOGGER_ENV: production
+    networks:
+      app-network:
 
 volumes:
   cassandra-data:
