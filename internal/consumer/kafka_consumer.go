@@ -113,6 +113,7 @@ func (c *KafkaConsumer) processBatch(ctx context.Context, messages []kafka.Messa
 				zap.Error(err),
 				zap.Int64("offset", msg.Offset),
 				zap.Int("partition", msg.Partition),
+				zap.String("key", string(msg.Key)),
 			)
 			failCount++
 			continue
@@ -122,6 +123,7 @@ func (c *KafkaConsumer) processBatch(ctx context.Context, messages []kafka.Messa
 			c.logger.Error("failed to record listening",
 				zap.Error(err),
 				zap.String("event_id", item.EventID.String()),
+				zap.String("user_id", item.UserID.String()),
 			)
 			failCount++
 			continue
@@ -131,8 +133,8 @@ func (c *KafkaConsumer) processBatch(ctx context.Context, messages []kafka.Messa
 	}
 
 	c.logger.Info("batch processed",
-		zap.Int("success_count", successCount),
-		zap.Int("fail_count", failCount),
+		zap.Int("success", successCount),
+		zap.Int("failed", failCount),
 	)
 }
 
