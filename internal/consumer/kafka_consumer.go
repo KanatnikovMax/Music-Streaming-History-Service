@@ -138,7 +138,7 @@ func (c *KafkaConsumer) processBatch(ctx context.Context, messages []kafka.Messa
 	)
 }
 
-func (c *KafkaConsumer) parseMessage(msg kafka.Message) (*domain.ListenHistoryItem, error) {
+func (c *KafkaConsumer) parseMessage(msg kafka.Message) (*domain.ListeningHistoryItem, error) {
 	var event songPlayedEvent
 	if err := json.Unmarshal(msg.Value, &event); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event: %w", err)
@@ -152,7 +152,7 @@ func (c *KafkaConsumer) parseMessage(msg kafka.Message) (*domain.ListenHistoryIt
 		}
 	}
 
-	return &domain.ListenHistoryItem{
+	return &domain.ListeningHistoryItem{
 		EventID:       event.EventID,
 		UserID:        event.UserID,
 		SongID:        event.SongID,

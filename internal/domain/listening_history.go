@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type ListenHistoryItem struct {
+type ListeningHistoryItem struct {
 	EventID       uuid.UUID
 	UserID        uuid.UUID
 	SongID        uuid.UUID

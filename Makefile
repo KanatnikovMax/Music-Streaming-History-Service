@@ -1,4 +1,4 @@
-.PHONY: run build infra-up infra-down infra-logs proto docker-up docker-down
+.PHONY: run build infra-up infra-down infra-logs proto docker-up docker-down test test-verbose
 
 run:
 	go run cmd/app/main.go
@@ -29,3 +29,9 @@ docker-up:
 
 docker-down:
 	docker-compose down -v
+
+test:
+	go test ./...
+
+test-verbose:
+	go test -v ./...
