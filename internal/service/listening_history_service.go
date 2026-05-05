@@ -13,8 +13,8 @@ import (
 const defaultHistoryLimit = 100
 
 type ListeningHistoryService interface {
-	RecordListening(ctx context.Context, item domain.ListenHistoryItem) error
-	GetUserHistory(ctx context.Context, userID uuid.UUID) ([]domain.ListenHistoryItem, error)
+	RecordListening(ctx context.Context, item domain.ListeningHistoryItem) error
+	GetUserHistory(ctx context.Context, userID uuid.UUID) ([]domain.ListeningHistoryItem, error)
 }
 
 type listeningHistoryService struct {
@@ -34,7 +34,7 @@ func NewListeningHistoryService(
 
 func (s *listeningHistoryService) RecordListening(
 	ctx context.Context,
-	item domain.ListenHistoryItem,
+	item domain.ListeningHistoryItem,
 ) error {
 	if err := s.repo.Save(ctx, item); err != nil {
 		return fmt.Errorf("failed to save item: %w", err)
@@ -50,7 +50,7 @@ func (s *listeningHistoryService) RecordListening(
 func (s *listeningHistoryService) GetUserHistory(
 	ctx context.Context,
 	userID uuid.UUID,
-) ([]domain.ListenHistoryItem, error) {
+) ([]domain.ListeningHistoryItem, error) {
 	s.logger.Info("getting user history",
 		zap.String("user_id", userID.String()),
 	)

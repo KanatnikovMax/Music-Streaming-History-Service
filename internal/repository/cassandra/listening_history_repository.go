@@ -28,7 +28,7 @@ func toGoogleUUID(id gocql.UUID) uuid.UUID {
 
 func (r *listeningHistoryRepository) Save(
 	ctx context.Context,
-	item domain.ListenHistoryItem,
+	item domain.ListeningHistoryItem,
 ) error {
 	query := `
 		INSERT INTO listening_history (user_id, listened_at_utc, event_id, song_id)
@@ -56,7 +56,7 @@ func (r *listeningHistoryRepository) GetLastByUser(
 	ctx context.Context,
 	userID uuid.UUID,
 	limit int,
-) ([]domain.ListenHistoryItem, error) {
+) ([]domain.ListeningHistoryItem, error) {
 	query := `
 		SELECT event_id, user_id, song_id, listened_at_utc
 		FROM listening_history
@@ -68,8 +68,8 @@ func (r *listeningHistoryRepository) GetLastByUser(
 		WithContext(ctx).
 		Iter()
 
-	var items []domain.ListenHistoryItem
-	var item domain.ListenHistoryItem
+	var items []domain.ListeningHistoryItem
+	var item domain.ListeningHistoryItem
 	var eventID, rowUserID, songID gocql.UUID
 	for iter.Scan(&eventID, &rowUserID, &songID, &item.ListenedAtUtc) {
 		item.EventID = toGoogleUUID(eventID)
