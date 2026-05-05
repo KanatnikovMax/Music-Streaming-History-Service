@@ -18,6 +18,7 @@
 - uber-go/zap для логирования
 - ilyakaznacheev/cleanenv для конфигурации
 - Docker
+- testify, testify/mock
 
 ## Схема данных
 
