@@ -8,22 +8,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type ListeningHistoryRepositoryMock struct {
+type ListeningHistoryServiceMock struct {
 	mock.Mock
 }
 
-func (m *ListeningHistoryRepositoryMock) Save(ctx context.Context, item domain.ListeningHistoryItem) error {
+func (m *ListeningHistoryServiceMock) RecordListening(ctx context.Context, item domain.ListeningHistoryItem) error {
 	args := m.Called(ctx, item)
 	return args.Error(0)
 }
 
-func (m *ListeningHistoryRepositoryMock) GetLastByUser(
+func (m *ListeningHistoryServiceMock) GetUserHistory(
 	ctx context.Context,
 	userID uuid.UUID,
-	limit int,
 ) ([]domain.ListeningHistoryItem, error) {
-	args := m.Called(ctx, userID, limit)
-
+	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
